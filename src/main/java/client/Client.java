@@ -57,8 +57,29 @@ public class Client extends JFrame {
         setVisible(true);
     }
 
+
     private void getFile(String filename) {
-        // TODO: 13.05.2021 downloading
+        try {
+            out.writeUTF("download");
+            out.writeUTF(filename);
+
+            File file = new File("client/" + in.readUTF()); // read file name
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+
+            FileOutputStream fos = new FileOutputStream(file);
+            long size = in.readLong();
+            byte[] buffer = new byte[8 * 1024];
+            for (int i = 0; i < (size + (8 * 1024 - 1)) / (8 * 1024); i++) {
+                int read = in.read(buffer);
+                fos.write(buffer, 0, read);
+            }
+            fos.close();
+            out.writeUTF("OK");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private void sendFile(String filename) {
@@ -94,6 +115,7 @@ public class Client extends JFrame {
 
     /**
      * message sending
+     *
      * @param message String
      */
     private void sendMessage(String message) {
@@ -106,8 +128,7 @@ public class Client extends JFrame {
             System.out.println(command);
         } catch (EOFException eofException) {
             System.err.println("Reading command error from " + socket.getInetAddress());
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
