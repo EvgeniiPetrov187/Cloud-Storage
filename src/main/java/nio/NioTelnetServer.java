@@ -73,7 +73,6 @@ public class NioTelnetServer {
             return;
         }
 
-
         buffer.flip();
 
         StringBuilder sb = new StringBuilder();
@@ -82,15 +81,6 @@ public class NioTelnetServer {
         }
 
         buffer.clear();
-
-
-        // TODO
-
-
-
-
-        // NIO
-        // NIO telnet server
 
         if (key.isValid()) {
             String command = sb
@@ -249,18 +239,17 @@ public class NioTelnetServer {
             } else if ("..".equals(com[1]) && !currentDirectory.equals("server/")) {
                 StringBuilder sb = new StringBuilder();
                 String[] comma = currentDirectory.split("/");
-                for(int i =0; i < comma.length-1; i++) {
-                    sb.append(comma[i]+"/");
+                for (int i = 0; i < comma.length - 1; i++) {
+                    sb.append(comma[i] + "/");
                 }
                 currentDirectory = sb.toString();
-            } else if (Files.exists(Paths.get(currentDirectory + com[1])) && !"..".equals(com[1])){
+            } else if (Files.exists(Paths.get(currentDirectory + com[1])) && !"..".equals(com[1])) {
                 currentDirectory = currentDirectory + com[1] + "/";
             }
-        } catch (RuntimeException e){
+        } catch (RuntimeException e) {
             channel.write(ByteBuffer.wrap(emptyDirectory.getBytes(StandardCharsets.UTF_8)));
         }
     }
-
 
     private void handleAccept(SelectionKey key, Selector selector) throws IOException {
         SocketChannel channel = ((ServerSocketChannel) key.channel()).accept();
