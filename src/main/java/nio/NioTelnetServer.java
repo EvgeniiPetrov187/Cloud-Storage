@@ -62,76 +62,76 @@ public class NioTelnetServer {
 	}
 
 	private void handleRead(SelectionKey key, Selector selector) throws IOException {
-		SocketChannel channel = ((SocketChannel) key.channel());
-		SocketAddress client = channel.getRemoteAddress();
-		int readBytes = channel.read(buffer);
-		if (readBytes < 0) {
-			channel.close();
-			return;
-		} else if (readBytes == 0) {
+            SocketChannel channel = ((SocketChannel) key.channel());
+            SocketAddress client = channel.getRemoteAddress();
+            int readBytes = channel.read(buffer);
+            if (readBytes < 0) {
+                channel.close();
+                return;
+            } else if (readBytes == 0) {
 
-			return;
-		}
+                return;
+            }
 
-		buffer.flip();
+            buffer.flip();
 
-		StringBuilder sb = new StringBuilder();
-		while (buffer.hasRemaining()) {
-			sb.append((char) buffer.get());
-		}
+            StringBuilder sb = new StringBuilder();
+            while (buffer.hasRemaining()) {
+                sb.append((char) buffer.get());
+            }
 
-		buffer.clear();
+            buffer.clear();
 
-		if (key.isValid()) {
-			String command = sb
-					.toString()
-					.replace("\n", "")
-					.replace("\r", "");
+            if (key.isValid()) {
+                String command = sb
+                        .toString()
+                        .replace("\n", "")
+                        .replace("\r", "");
 
-			String[] commands = command.split(" ");
+                String[] commands = command.split(" ");
 
-			if ("--help".equals(command)) {
-				sendMessage(LS_COMMAND, selector, client);
-				sendMessage(MKDIR_COMMAND, selector, client);
-				sendMessage(TOUCH_COMMAND, selector, client);
-				sendMessage(CD_PATH_COMMAND, selector, client);
-				sendMessage(REMOVE_COMMAND, selector, client);
-				sendMessage(COPY_COMMAND, selector, client);
-				sendMessage(CAT_COMMAND, selector, client);
-				sendMessage(CHANGE_NICKNAME, selector, client);
-			} else if ("ls".equals(command)) {
-				sendMessage(getFileList().concat("\r\n"), selector, client);
-			} else if ("nick".equals(commands[0])) {
-				changeNickname(commands, channel);
-			} else if ("touch".equals(commands[0])) {
-				createFile(commands);
-			} else if ("mkdir".equals(commands[0])) {
-				createDirectory(commands);
-			} else if ("cat".equals(commands[0])) {
-				showFile(commands, channel);
-			} else if ("rm".equals(commands[0])) {
-				deleteFile(commands, channel);
-			} else if ("copy".equals(commands[0])) {
-				copyFile(commands, channel);
-			} else if ("cd".equals(commands[0])) {
-				changeDirectory(commands, channel);
-			} else if ("exit".equals(command)) {
-				System.out.println("Client logged out. IP: " + channel.getRemoteAddress());
-				channel.close();
-				return;
-			}
-		}
-		String directoryInformation = "Working directory: ~" + currentDirectory + "\r\n";
-		channel.write(ByteBuffer.wrap(directoryInformation.getBytes(StandardCharsets.UTF_8)));
+                if ("--help".equals(command)) {
+                    sendMessage(LS_COMMAND, selector, client);
+                    sendMessage(MKDIR_COMMAND, selector, client);
+                    sendMessage(TOUCH_COMMAND, selector, client);
+                    sendMessage(CD_PATH_COMMAND, selector, client);
+                    sendMessage(REMOVE_COMMAND, selector, client);
+                    sendMessage(COPY_COMMAND, selector, client);
+                    sendMessage(CAT_COMMAND, selector, client);
+                    sendMessage(CHANGE_NICKNAME, selector, client);
+                } else if ("ls".equals(command)) {
+                    sendMessage(getFileList().concat("\r\n"), selector, client);
+                } else if ("nick".equals(commands[0])) {
+                    changeNickname(commands, channel);
+                } else if ("touch".equals(commands[0])) {
+                    createFile(commands);
+                } else if ("mkdir".equals(commands[0])) {
+                    createDirectory(commands);
+                } else if ("cat".equals(commands[0])) {
+                    showFile(commands, channel);
+                } else if ("rm".equals(commands[0])) {
+                    deleteFile(commands, channel);
+                } else if ("copy".equals(commands[0])) {
+                    copyFile(commands, channel);
+                } else if ("cd".equals(commands[0])) {
+                    changeDirectory(commands, channel);
+                } else if ("exit".equals(command)) {
+                    System.out.println("Client logged out. IP: " + channel.getRemoteAddress());
+                    channel.close();
+                    return;
+                }
+            }
+            String directoryInformation = "Working directory: ~" + currentDirectory + "\r\n";
+            channel.write(ByteBuffer.wrap(directoryInformation.getBytes(StandardCharsets.UTF_8)));
 
-		// вывод nickname в начале строки
-		String nickReady = nickname + ": ";
-		channel.write(ByteBuffer.wrap(nickReady.getBytes(StandardCharsets.UTF_8)));
-	}
+            // вывод nickname в начале строки
+            String nickReady = nickname + ": ";
+            channel.write(ByteBuffer.wrap(nickReady.getBytes(StandardCharsets.UTF_8)));
 
+    }
 
 	private String getFileList() {
-		return String.join(" ", new File("server").list());
+		return String.join(" ", new File(currentDirectory).list());
 	}
 
 	private void sendMessage(String message, Selector selector, SocketAddress client) throws IOException {
@@ -162,8 +162,8 @@ public class NioTelnetServer {
 				Path newFile = Paths.get(currentDirectory + com[1]);
 				if (!Files.exists(newFile))
 					Files.createFile(newFile);
-			} catch (RuntimeException e) {
-				Path newFile = Paths.get(currentDirectory + "/new file(" + numberOfNewFiles + ")");
+			} catch (IndexOutOfBoundsException e) {
+				Path newFile = Paths.get(currentDirectory + "new file(" + numberOfNewFiles + ")");
 				numberOfNewFiles++;
 				Files.createFile(newFile);
 			}
@@ -179,7 +179,7 @@ public class NioTelnetServer {
 				Path newDirectory = Paths.get(currentDirectory + com[1]);
 				if (!Files.exists(newDirectory))
 					Files.createDirectory(newDirectory);
-			} catch (RuntimeException e) {
+			} catch (IndexOutOfBoundsException e) {
 				Path newDirectory = Paths.get(currentDirectory + "New folder (" + numberOfNewFolders + ")");
 				numberOfNewFolders++;
 				Files.createDirectory(newDirectory);
@@ -199,7 +199,7 @@ public class NioTelnetServer {
 				readyLine = line + "\r\n";
 				channel.write(ByteBuffer.wrap(readyLine.getBytes(StandardCharsets.UTF_8)));
 			}
-		} catch (RuntimeException e) {
+		} catch (IndexOutOfBoundsException e) {
 			channel.write(ByteBuffer.wrap(emptyFile.getBytes(StandardCharsets.UTF_8)));
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -212,23 +212,27 @@ public class NioTelnetServer {
 		try {
 			Path pathToFile = Paths.get(currentDirectory + com[1]);
 			Files.delete(pathToFile);
-		} catch (RuntimeException e) {
+		} catch (IndexOutOfBoundsException e) {
 			channel.write(ByteBuffer.wrap(emptyFile.getBytes(StandardCharsets.UTF_8)));
 		}
 	}
 
 	// copy [src] [target] - копирование файла или папки
-	private void copyFile(String[] com, SocketChannel channel) throws IOException {
-		String emptyFile = "Filename or directory's name cannot be empty\r\n";
-		try {
-			Path pathToFile = Paths.get(currentDirectory + com[1]);
-			Path output = Paths.get(currentDirectory + com[2] + "/" + com[1]);
-			if (!Files.exists(output))
-				Files.copy(pathToFile, output, StandardCopyOption.COPY_ATTRIBUTES);
-		} catch (RuntimeException e) {
-			channel.write(ByteBuffer.wrap(emptyFile.getBytes(StandardCharsets.UTF_8)));
-		}
-	}
+	private void copyFile(String[] com, SocketChannel channel) {
+        try {
+            String emptyFile = "Filename or directory's name cannot be empty\r\n";
+            try {
+                Path pathToFile = Paths.get(currentDirectory + com[1]);
+                Path output = Paths.get(com[2] + "/" + com[1]);
+                if (!Files.exists(output))
+                    Files.copy(pathToFile, output, StandardCopyOption.COPY_ATTRIBUTES);
+            } catch (IndexOutOfBoundsException e) {
+                channel.write(ByteBuffer.wrap(emptyFile.getBytes(StandardCharsets.UTF_8)));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
 	// cd [path] - перемещение по каталогу (.. | ~ )
 	private void changeDirectory(String[] com, SocketChannel channel) throws IOException {
@@ -246,7 +250,7 @@ public class NioTelnetServer {
 			} else if (Files.exists(Paths.get(currentDirectory + com[1])) && !"..".equals(com[1])) {
 				currentDirectory = currentDirectory + com[1] + "/";
 			}
-		} catch (RuntimeException e) {
+		} catch (IndexOutOfBoundsException e) {
 			channel.write(ByteBuffer.wrap(emptyDirectory.getBytes(StandardCharsets.UTF_8)));
 		}
 	}
